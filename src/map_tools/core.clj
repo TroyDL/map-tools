@@ -3,6 +3,32 @@
 
 (declare sift sift* strain-maps extract-id trim-res)
 
+(defn flatten-map
+  "Take map and return a single level map with vector keypaths as the keys.
+
+   Ex:
+     (flatten-map {:a {:b {:c 0} :d 1} :e 2})
+     => {[:a :b :c] 0, [:a :d] 1, [:e] 2}"
+  ([m] (flatten-map m []))
+  ([m parent-key] 
+     (when m
+       (loop [res (transient {})
+              m m]
+         (let [[k v] (first m)
+               cm {k v}
+               res (if (map? v)
+                     (if (empty? parent-key) 
+                       (conj! res (flatten-map v [k]))
+                       (conj! res (flatten-map v (conj parent-key k))))
+                     (if-not (nil? k) 
+                       (let [k (conj parent-key k) 
+                             new-map {k v}] 
+                         (conj! res new-map))
+                       (conj! res {})))]
+           (if (empty? (next m))
+             (persistent! res)
+             (recur res (next m))))))))
+
 (defn return
   "Return collection of distinct values from maps of a given key or
    nested key."
@@ -45,29 +71,3 @@
     (filter #(= v (get (pred %) k)) coll)
     (filter #(= v (get % k)) coll)))
 
-
-;;;; IN PROGRESS
-
-(defn proto-flatten-map
-  "Take map and return single level map with vector keypaths as the keys.
-
-   Ex:
-     (proto-flatten-map {:a {:b {:c 0} :d 1} :e 2})
-     => {[:a :b :c] 0, [:a :d] 1, [:e] 2}"
-  ([m] (proto-flatten-map m []))
-  ([m parent-key] 
-     (when m
-       (let [res (atom {})] ;; Switch to transients 
-         (doseq [[k v] m]
-           (if (map? v)
-             (if (empty? parent-key) 
-               (swap! res into (proto-flatten-map v [k]))
-               (swap! res into (proto-flatten-map v (conj parent-key k))))
-             (when (map? (select-keys m [k])) 
-               (let [[k v] (first (select-keys m [k]))
-                     k (conj parent-key k) 
-                     new-map {k v}] 
-                 (swap! res into new-map)))))
-         @res))))
-
-(proto-flatten-map {:a {:b {:c 0} :d 1} :e 2})
