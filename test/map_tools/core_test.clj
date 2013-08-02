@@ -115,5 +115,17 @@
     (doseq [[e t] (map list es ts)]
       (is (= e t)))))
 
+(deftest find-keypaths-test
+  (let [m0 {}
+        m1 {:a 0}
+        m2 {:a {:b 0}}
+        m3 {:a {"b" {'(c) {4 {:e 6} :e 6}}}}
+        ms [m0 m1 m2 m3]
+        es [nil '([:a]) '([:a :b]) '([:a "b" (c) 4 :e] [:a "b" (c) :e])]
+        ts (map #(find-keypaths % %2) ms [{:a 1} {:a 0} {:b 0} {:e 6}])]
+    (println ts)
+    (doseq [[e t] (map list es ts)]
+      (is (= e t)))))
+
 ;;TODO
 (comment (deftest sift-test))

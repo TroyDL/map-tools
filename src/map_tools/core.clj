@@ -29,6 +29,21 @@
              (persistent! res)
              (recur res (next m))))))))
 
+(defn find-keypaths
+  "Take map and kv pair and if the pair exists in any level of the map
+   return a coll containing vectors of keypaths needed to get reach
+   the value (get-in style).
+
+   Ex:
+     (find-keypaths {:a {:b {:c 0} :d 1} :e 2} {:c 0})
+     => ([:a :b :c] [:f :c])"
+  [m kv]
+  (let [fm (flatten-map m)
+        [k v] (first kv)
+        fks (filter #(= k (last %)) (keys fm))
+        fks (filter #(= v (get-in m %)) fks)]
+    (when-not (empty? fks) fks)))
+
 (defn return
   "Return collection of distinct values from maps of a given key or
    nested key."
